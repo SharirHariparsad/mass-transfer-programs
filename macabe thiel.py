@@ -40,23 +40,27 @@ max_steps = 300
 tol = 1e-6
 feed_stage_index = None
 
-for step in range(max_steps):
+def new_func(xB, xF, R, x_from_y, y_rect, y_strip, stair_x, stair_y, current_y, max_steps, tol, feed_stage_index):
+    for step in range(max_steps):
     # horizontal to equilibrium curve
-    x_new = x_from_y(current_y)
-    stair_x.append(x_new)
-    stair_y.append(current_y)
-    if x_new <= xB + tol:
-        break
+        x_new = x_from_y(current_y)
+        stair_x.append(x_new)
+        stair_y.append(current_y)
+        if x_new <= xB + tol:
+            break
     # which operating line?
-    if x_new > xF + 1e-12:
-        next_y = y_rect(x_new, R)
-    else:
-        if feed_stage_index is None:
-            feed_stage_index = len(stair_x)-1
-        next_y = y_strip(x_new)
-    stair_x.append(x_new)
-    stair_y.append(next_y)
-    current_y = next_y
+        if x_new > xF + 1e-12:
+            next_y = y_rect(x_new, R)
+        else:
+            if feed_stage_index is None:
+                feed_stage_index = len(stair_x)-1
+            next_y = y_strip(x_new)
+        stair_x.append(x_new)
+        stair_y.append(next_y)
+        current_y = next_y
+    return feed_stage_index
+
+feed_stage_index = new_func(xB, xF, R, x_from_y, y_rect, y_strip, stair_x, stair_y, current_y, max_steps, tol, feed_stage_index)
 
 num_stage_steps = (len(stair_x)-1)//2 + ((len(stair_x)-1)%2)
 # Plot
@@ -65,7 +69,7 @@ ax.plot(x_pts, y_pts, label='Equilibrium curve', linewidth=2)
 ax.plot([0,1],[0,1],'--',label='Diagonal y=x')
 xx = np.linspace(0,1,201)
 ax.plot(xx, y_rect(xx, R), label=f'Rectifying (R={R})')
-ax.plot(xx, y_strip(xx), label='Stripping (anchored at diagonal xB)')
+ax.plot(xx, y_strip(xx), label='Stripping ')
 ax.vlines(xF, 0, 1, linestyles=':', label='q-line (q=1)')
 
 # staircase
@@ -83,7 +87,7 @@ ax.scatter([xF],[yR_at_xF], marker='o', color='red', label='feed intersection (r
 
 ax.set_xlim(-0.02,1.02); ax.set_ylim(-0.02,1.02)
 ax.set_xlabel('x (liquid mole fraction n-hexane)'); ax.set_ylabel('y (vapor mole fraction n-hexane)')
-ax.set_title('Corrected McCabe-Thiele (stripping line anchored at diagonal xB)')
+ax.set_title('McCabe-Thiele Method for Binary Distillation')
 ax.grid(True); ax.legend(loc='lower right')
 plt.gca().set_aspect('equal', adjustable='box')
 
